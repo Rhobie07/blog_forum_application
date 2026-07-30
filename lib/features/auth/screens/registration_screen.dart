@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+class RegistrationScreen extends StatefulWidget {
+  const RegistrationScreen({super.key});
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -30,7 +30,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Welcome back',
+                    'Create your account',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -40,7 +40,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 4),
 
                   Text(
-                    'Sign in to your account',
+                    'Join the conversation',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.secondary,
@@ -79,14 +79,17 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter your password'
+                    validator: (value) => value == null || value.length < 6
+                        ? 'Password must be at least 6 characters long'
                         : null,
                   ),
 
                   const SizedBox(height: 24),
 
-                  FilledButton(onPressed: () {}, child: const Text('Sign in')),
+                  FilledButton(
+                    onPressed: () {},
+                    child: const Text('Create account'),
+                  ),
 
                   const SizedBox(height: 16),
 
@@ -95,12 +98,12 @@ class _AuthScreenState extends State<AuthScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
+                        'Already have an account? ',
                         style: theme.textTheme.bodySmall,
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('Create one'),
+                        child: const Text('Sign in'),
                       ),
                     ],
                   ),
