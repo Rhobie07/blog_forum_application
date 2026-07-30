@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -102,7 +103,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         style: theme.textTheme.bodySmall,
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => context.go('/login'),
                         child: const Text('Sign in'),
                       ),
                     ],

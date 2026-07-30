@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -99,7 +100,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: theme.textTheme.bodySmall,
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () => context.go('/register'),
                         child: const Text('Create one'),
                       ),
                     ],
