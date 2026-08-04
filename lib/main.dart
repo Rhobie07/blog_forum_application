@@ -7,6 +7,9 @@ import 'package:biog_forum_application/features/auth/data/auth_repository.dart';
 import 'package:biog_forum_application/features/auth/redux/auth_actions.dart';
 import 'package:biog_forum_application/features/auth/redux/auth_middleware.dart';
 import 'package:biog_forum_application/features/auth/redux/auth_reducer.dart';
+import 'package:biog_forum_application/features/blog_page/data/blog_repository.dart';
+import 'package:biog_forum_application/features/blog_page/redux/blog_middleware.dart';
+import 'package:biog_forum_application/features/blog_page/redux/blog_reducer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -29,15 +32,20 @@ Future<void> main() async {
   final store = Store<AppState>(
     _appReducer,
     initialState: AppState.initial(),
-    middleware: [createAuthMiddleware(AuthRepository(client))],
+    middleware: [
+      createAuthMiddleware(AuthRepository(client)),
+      createBlogMiddleware(BlogRepository(client)),
+    ],
   );
   final router = AppRouter(store);
 
   runApp(_BlogForumApp(store: store, router: router));
 }
 
-AppState _appReducer(AppState state, dynamic action) =>
-    AppState(auth: authReducer(state.auth, action));
+AppState _appReducer(AppState state, dynamic action) => AppState(
+  auth: authReducer(state.auth, action),
+  blog: blogReducer(state.blog, action),
+);
 
 class _BlogForumApp extends StatefulWidget {
   const _BlogForumApp({required this.store, required this.router});

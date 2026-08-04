@@ -35,6 +35,19 @@ class AppRouter {
           builder: (_, _) => const RegistrationScreen(),
         ),
         GoRoute(path: '/blogPage', builder: (_, _) => const BlogPageScreen()),
+        GoRoute(
+          path: '/posts/:id',
+          builder: (_, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '');
+            if (id == null || id <= 0) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('Post')),
+                body: const Center(child: Text('Post unavailable')),
+              );
+            }
+            return PostDetailScreen(postId: id);
+          },
+        ),
       ],
       errorBuilder: (_, _) => Scaffold(
         appBar: AppBar(title: const Text('Not Found')),

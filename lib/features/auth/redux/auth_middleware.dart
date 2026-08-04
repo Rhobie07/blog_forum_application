@@ -22,10 +22,13 @@ Future<void> _signIn(
   SignInRequested action,
 ) async {
   try {
+    
     final response = await repository.signIn(
       email: action.email,
       password: action.password,
     );
+
+    
     store.dispatch(AuthSucceeded(response.session));
   } on AuthException catch (error) {
     store.dispatch(AuthFailed(error.message));
