@@ -22,6 +22,7 @@ class MediaGallery extends StatelessWidget {
     this.parentLabel,
     this.onRemove,
     this.removeEnabled = true,
+    this.imageFit = BoxFit.cover,
   });
 
   final List<ContentImage> images;
@@ -31,6 +32,7 @@ class MediaGallery extends StatelessWidget {
   final String? parentLabel;
   final ValueChanged<ContentImage>? onRemove;
   final bool removeEnabled;
+  final BoxFit imageFit;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +58,7 @@ class MediaGallery extends StatelessWidget {
                         aspectRatio: compact ? 1.35 : 1.2,
                         child: Image.network(
                           publicStorageUrl(ordered[i].storagePath),
-                          fit: BoxFit.cover,
+                          fit: imageFit,
                           errorBuilder: (_, _, _) => ColoredBox(
                             color: Theme.of(
                               context,

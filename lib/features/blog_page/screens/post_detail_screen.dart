@@ -156,6 +156,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           borderRadius: BorderRadius.circular(8),
                           child: MediaGallery(
                             images: post.images,
+                            imageFit: BoxFit.contain,
                             parentPostId: post.id,
                             parentLabel: post.title,
                           ),
