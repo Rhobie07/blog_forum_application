@@ -126,21 +126,16 @@ class BlogPageScreen extends StatelessWidget {
       postId: post?.id,
       existingImages: post?.images ?? const [],
       isSaving: bvm.isBusy,
-      onSubmit: (title, excerpt, content) async {
+      onSubmit: (title, excerpt, content, images) async {
         final store = StoreProvider.of<AppState>(context);
         if (post == null) {
-          store.dispatch(CreatePostRequested(title, excerpt, content));
+          store.dispatch(CreatePostRequested(title, excerpt, content, images));
         } else {
-          store.dispatch(UpdatePostRequested(post.id, title, excerpt, content));
+          store.dispatch(
+            UpdatePostRequested(post.id, title, excerpt, content, images),
+          );
         }
         return null;
-      },
-      onUploadImage: (file, position) {
-        final store = StoreProvider.of<AppState>(context);
-        final id = post?.id ?? store.state.blog.selectedPost?.id;
-        if (id != null) {
-          store.dispatch(UploadPostImageRequested(id, file, position));
-        }
       },
       onDeleteImage: post == null
           ? null

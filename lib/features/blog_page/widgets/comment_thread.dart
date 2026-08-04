@@ -304,32 +304,6 @@ class _CommentThreadState extends State<CommentThread> {
             ],
           ),
 
-        if (widget.currentUserId == null && widget.onLogin != null)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 32,
-                    color: theme.colorScheme.secondary.withAlpha(80),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Log in to join the conversation',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonal(
-                    onPressed: widget.onLogin,
-                    child: const Text('Log in'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
         if (_composerError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -465,6 +439,32 @@ class _CommentThreadState extends State<CommentThread> {
             const Divider(height: 4),
           ],
         ),
+
+        if (widget.currentUserId == null && widget.onLogin != null)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: 32,
+                    color: theme.colorScheme.secondary.withAlpha(80),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Log in to join the conversation',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonal(
+                    onPressed: widget.onLogin,
+                    child: const Text('Log in'),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         if (widget.onCreate != null) ...[
           const SizedBox(height: 12),

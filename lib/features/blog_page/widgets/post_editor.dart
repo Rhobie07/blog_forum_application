@@ -13,7 +13,6 @@ class PostEditor extends StatefulWidget {
     this.postId,
     this.existingImages = const [],
     required this.onSubmit,
-    this.onUploadImage,
     this.onDeleteImage,
     this.isSaving = false,
   });
@@ -28,10 +27,13 @@ class PostEditor extends StatefulWidget {
 
   final List<ContentImage> existingImages;
 
-  final Future<String?> Function(String title, String excerpt, String content)
+  final Future<String?> Function(
+    String title,
+    String excerpt,
+    String content,
+    List<XFile> images,
+  )
   onSubmit;
-
-  final void Function(XFile file, int position)? onUploadImage;
 
   final void Function(ContentImage image)? onDeleteImage;
 
@@ -61,8 +63,6 @@ class _PostEditorState extends State<PostEditor> {
   final _picker = ImagePicker();
 
   final List<XFile> _pendingFiles = [];
-
-  bool _uploading = false;
 
   final Set<int> _removedImageIds = {};
 
@@ -103,6 +103,7 @@ class _PostEditorState extends State<PostEditor> {
       _title.text,
       _excerpt.text,
       _content.text,
+      List.unmodifiable(_pendingFiles),
     );
     if (!mounted) return;
     if (error != null) {
@@ -111,12 +112,6 @@ class _PostEditorState extends State<PostEditor> {
         _error = error;
       });
       return;
-    }
-    if (_pendingFiles.isNotEmpty) {
-      setState(() => _uploading = true);
-      for (var i = 0; i < _pendingFiles.length; i++) {
-        widget.onUploadImage!(_pendingFiles[i], i);
-      }
     }
     if (!mounted) return;
     Navigator.pop(context);
@@ -221,7 +216,7 @@ class _PostEditorState extends State<PostEditor> {
               child: Row(
                 children: [
                   OutlinedButton.icon(
-                    onPressed: _uploading ? null : _pickImages,
+                    onPressed: _saving ? null : _pickImages,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
                     label: const Text('Add images'),
                   ),
@@ -236,16 +231,14 @@ class _PostEditorState extends State<PostEditor> {
     ),
     actions: [
       TextButton(
-        onPressed: widget.isSaving || _saving || _uploading
+        onPressed: widget.isSaving || _saving
             ? null
             : () => Navigator.pop(context),
         child: const Text('Cancel'),
       ),
       FilledButton(
-        onPressed: widget.isSaving || _saving || _uploading ? null : _submit,
-        child: Text(
-          widget.isSaving || _saving || _uploading ? 'Saving\u2026' : 'Save',
-        ),
+        onPressed: widget.isSaving || _saving ? null : _submit,
+        child: Text(widget.isSaving || _saving ? 'Saving\u2026' : 'Save'),
       ),
     ],
   );

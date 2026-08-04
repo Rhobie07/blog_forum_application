@@ -1,5 +1,7 @@
 import 'package:biog_forum_application/core/redux/app_state.dart';
 import 'package:biog_forum_application/features/blog_page/data/blog_repository.dart';
+import 'package:biog_forum_application/features/blog_page/models/blog_models.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:redux/redux.dart';
 import 'blog_actions.dart';
 
@@ -90,18 +92,21 @@ Future<void> _create(
   BlogRepository r,
   CreatePostRequested a,
 ) async {
+  late final BlogPost created;
   try {
-    final created = await r.create(
+    created = await r.create(
       title: a.title,
       excerpt: a.excerpt,
       content: a.content,
     );
-    s.dispatch(PostCreated(created));
   } catch (_) {
     s.dispatch(
       const CreatePostFailed('Unable to save changes. Please try again.'),
     );
+    return;
   }
+  s.dispatch(PostCreated(created));
+  await _uploadSavedPostImages(s, r, created.id, a.images);
 }
 
 Future<void> _update(
@@ -109,21 +114,43 @@ Future<void> _update(
   BlogRepository r,
   UpdatePostRequested a,
 ) async {
+  late final BlogPost updated;
   try {
-    s.dispatch(
-      PostUpdated(
-        await r.update(
-          id: a.id,
-          title: a.title,
-          excerpt: a.excerpt,
-          content: a.content,
-        ),
-      ),
+    updated = await r.update(
+      id: a.id,
+      title: a.title,
+      excerpt: a.excerpt,
+      content: a.content,
     );
   } catch (_) {
     s.dispatch(
       const UpdatePostFailed('Unable to save changes. Please try again.'),
     );
+    return;
+  }
+  s.dispatch(PostUpdated(updated));
+  await _uploadSavedPostImages(s, r, updated.id, a.images);
+}
+
+Future<void> _uploadSavedPostImages(
+  Store<AppState> s,
+  BlogRepository r,
+  int postId,
+  List<XFile> images,
+) async {
+  for (var position = 0; position < images.length; position++) {
+    try {
+      final image = await r.uploadPostImage(
+        postId: postId,
+        file: images[position],
+        position: position,
+      );
+      s.dispatch(PostImageUploaded(postId, image));
+    } catch (_) {
+      s.dispatch(
+        const UploadPostImageFailed('Unable to save image. Please try again.'),
+      );
+    }
   }
 }
 

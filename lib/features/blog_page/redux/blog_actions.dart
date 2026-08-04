@@ -55,10 +55,16 @@ class LoadCommentsFailed {
 }
 
 class CreatePostRequested {
-  const CreatePostRequested(this.title, this.excerpt, this.content);
+  const CreatePostRequested(
+    this.title,
+    this.excerpt,
+    this.content,
+    this.images,
+  );
   final String title;
   final String excerpt;
   final String content;
+  final List<XFile> images;
 }
 
 class PostCreated {
@@ -72,11 +78,18 @@ class CreatePostFailed {
 }
 
 class UpdatePostRequested {
-  const UpdatePostRequested(this.id, this.title, this.excerpt, this.content);
+  const UpdatePostRequested(
+    this.id,
+    this.title,
+    this.excerpt,
+    this.content,
+    this.images,
+  );
   final int id;
   final String title;
   final String excerpt;
   final String content;
+  final List<XFile> images;
 }
 
 class PostUpdated {
