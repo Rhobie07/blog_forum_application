@@ -1,3 +1,4 @@
+import 'package:biog_forum_application/features/ui/header_icon_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:go_router/go_router.dart';
@@ -40,26 +41,7 @@ class BlogPageScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      InkWell(
-                        onTap: () => context.go('/blogPage'),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.auto_stories,
-                              color: theme.colorScheme.primary,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'The Forum',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      HeaderIconWidget(theme: theme),
                       ProfileMenu(
                         isSignedIn: bvm.isSignedIn,
                         displayName: bvm.displayName,
