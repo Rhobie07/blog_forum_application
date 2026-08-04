@@ -1,6 +1,7 @@
 import 'package:biog_forum_application/core/redux/app_state.dart';
 import 'package:biog_forum_application/features/auth/redux/auth_actions.dart';
 import 'package:biog_forum_application/features/auth/view_model/auth_view_models.dart';
+import 'package:biog_forum_application/features/ui/header_icon_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:go_router/go_router.dart';
@@ -63,6 +64,13 @@ class _AuthScreenState extends State<AuthScreen> {
             final narrow = constraints.maxWidth < 500;
             return Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
+                  child: Row(children: [HeaderIconWidget(theme: theme)]),
+                ),
                 Expanded(
                   child: Center(
                     child: SizedBox(
