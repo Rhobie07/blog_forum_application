@@ -8669,11 +8669,11 @@ if(q==null)q="SUPABASE_URL_NOT_FOUND"
 p=$.aFa().ga_n().i(0,"SUPABASE_PUBLISHABLE_KEY")
 if(p==null)p="SUPABASE_PUBLISHABLE_KEY_NOT_FOUND"
 if(q.length===0||p.length===0)throw A.f(A.an("Missing Supabase configuration."))
-o=$.k6().b
-o===$&&A.a()
 s=3
 return A.m(A.aoC(p,q),$async$a2B)
-case 3:if($.a_==null)A.FR()
+case 3:o=$.k6().b
+o===$&&A.a()
+if($.a_==null)A.FR()
 n=$.a_
 n.toString
 m=$.aL().gd1().b
