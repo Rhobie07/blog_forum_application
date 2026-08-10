@@ -20,9 +20,8 @@ Future<void> main() async {
     throw StateError('Missing Supabase configuration.');
   }
 
-  final client = Supabase.instance.client;
-
   await Supabase.initialize(url: url, publishableKey: key);
+  final client = Supabase.instance.client;
 
   runApp(_BlogForumApp(client: client));
 }
