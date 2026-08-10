@@ -1,28 +1,21 @@
-import 'package:biog_forum_application/core/redux/app_state.dart';
 import 'package:biog_forum_application/features/auth/screens/auth_screen.dart';
 import 'package:biog_forum_application/features/auth/screens/registration_screen.dart';
+import 'package:biog_forum_application/features/auth/state/auth_notifier.dart';
 import 'package:biog_forum_application/features/blog_page/screens/blog_page.dart';
 import 'package:biog_forum_application/features/blog_page/screens/post_detail_screen.dart';
-import 'package:go_router/go_router.dart';
-import 'package:redux/redux.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AppRouter {
-  late final GoRouter router;
-  late final VoidCallback dispose;
-
-  AppRouter(Store<AppState> store) {
-    final notifier = ValueNotifier<AppState?>(null);
-    final sub = store.onChange.listen((state) => notifier.value = state);
-
+  AppRouter(AuthNotifier authNotifier) {
     router = GoRouter(
-      refreshListenable: notifier,
+      refreshListenable: authNotifier,
       redirect: (context, state) {
-        final signedIn = store.state.auth.session != null;
-        final loc = state.matchedLocation;
+        final signedIn = authNotifier.state.session != null;
+        final location = state.matchedLocation;
 
-        if (loc == '/') return '/blogPage';
-        if (signedIn && (loc == '/login' || loc == '/register')) {
+        if (location == '/') return '/blogPage';
+        if (signedIn && (location == '/login' || location == '/register')) {
           return '/blogPage';
         }
         return null;
@@ -54,10 +47,9 @@ class AppRouter {
         body: const Center(child: Text('Page not found')),
       ),
     );
-
-    dispose = () {
-      sub.cancel();
-      notifier.dispose();
-    };
   }
+
+  late final GoRouter router;
+
+  void dispose() => router.dispose();
 }

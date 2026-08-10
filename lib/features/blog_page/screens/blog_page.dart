@@ -1,93 +1,130 @@
-import 'package:biog_forum_application/features/ui/header_icon_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
-import 'package:go_router/go_router.dart';
-import 'package:redux/redux.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:biog_forum_application/core/redux/app_state.dart';
-import 'package:biog_forum_application/features/auth/redux/auth_actions.dart';
+import 'package:biog_forum_application/features/auth/state/auth_notifier.dart';
 import 'package:biog_forum_application/features/blog_page/models/blog_models.dart';
-import 'package:biog_forum_application/features/blog_page/redux/blog_actions.dart';
-import 'package:biog_forum_application/features/blog_page/view_models/blog_view_models.dart';
+import 'package:biog_forum_application/features/blog_page/state/blog_notifier.dart';
 import 'package:biog_forum_application/features/blog_page/widgets/blog_feed.dart';
 import 'package:biog_forum_application/features/blog_page/widgets/post_editor.dart';
 import 'package:biog_forum_application/features/blog_page/widgets/profile_menu.dart';
+import 'package:biog_forum_application/features/ui/header_icon_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class BlogPageScreen extends StatelessWidget {
+class BlogPageScreen extends StatefulWidget {
   const BlogPageScreen({super.key});
 
   @override
-  Widget build(
-    BuildContext context,
-  ) => StoreConnector<AppState, BlogPageViewModel>(
-    converter: _bvmFromStore,
-    onInit: (store) => store.dispatch(const LoadPostsRequested(page: 1)),
-    builder: (context, bvm) {
-      final theme = Theme.of(context);
-      return Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              //Header
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: theme.dividerColor)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      HeaderIconWidget(theme: theme),
-                      ProfileMenu(
-                        isSignedIn: bvm.isSignedIn,
-                        displayName: bvm.displayName,
-                        onLogin: () => context.go('/login'),
-                        onLogout: () => StoreProvider.of<AppState>(
-                          context,
-                        ).dispatch(const SignOutRequested()),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+  State<BlogPageScreen> createState() => _BlogPageScreenState();
+}
 
-              //blog feed
-              Expanded(
-                child: BlogFeed(
-                  posts: bvm.posts,
-                  isSignedIn: bvm.isSignedIn,
-                  currentUserId: bvm.currentUserId,
-                  loading: bvm.postsLoading,
-                  isBusy: bvm.isBusy,
-                  error: bvm.postsError,
-                  onCreate: bvm.isSignedIn ? () => _edit(context, bvm) : null,
-                  onEdit: bvm.isSignedIn
-                      ? (post) => _edit(context, bvm, post)
-                      : null,
-                  onDelete: bvm.isSignedIn
-                      ? (post) => _confirmDelete(context, post)
-                      : null,
-                  onOpen: (post) => context.go('/posts/${post.id}'),
-                  currentPage: bvm.currentPage,
-                  totalPages: bvm.totalPages,
-                  onPageChanged: (page) => StoreProvider.of<AppState>(
-                    context,
-                  ).dispatch(LoadPostsRequested(page: page)),
-                  onRetry: () => StoreProvider.of<AppState>(
-                    context,
-                  ).dispatch(const LoadPostsRequested(page: 1)),
+class _BlogPageScreenState extends State<BlogPageScreen> {
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loaded) return;
+    _loaded = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<BlogNotifier>().loadPosts(page: 1);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final auth = context
+        .select<
+          AuthNotifier,
+          ({bool signedIn, String? userId, String displayName})
+        >((notifier) {
+          final session = notifier.state.session;
+          return (
+            signedIn: session != null,
+            userId: session?.user.id,
+            displayName: _displayName(session),
+          );
+        });
+    final blog = context
+        .select<
+          BlogNotifier,
+          ({
+            List<BlogPost> posts,
+            bool loading,
+            bool busy,
+            String? error,
+            int currentPage,
+            int totalPages,
+          })
+        >(
+          (notifier) => (
+            posts: notifier.state.posts,
+            loading: notifier.state.postsLoading,
+            busy: notifier.state.isBusy,
+            error: notifier.state.postsError,
+            currentPage: notifier.state.currentPage,
+            totalPages: notifier.state.totalPages,
+          ),
+        );
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: theme.dividerColor)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    HeaderIconWidget(theme: theme),
+                    ProfileMenu(
+                      isSignedIn: auth.signedIn,
+                      displayName: auth.displayName,
+                      onLogin: () => context.go('/login'),
+                      onLogout: () => context.read<AuthNotifier>().signOut(),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: BlogFeed(
+                posts: blog.posts,
+                isSignedIn: auth.signedIn,
+                currentUserId: auth.userId,
+                loading: blog.loading,
+                isBusy: blog.busy,
+                error: blog.error,
+                onCreate: auth.signedIn
+                    ? () => _edit(context, blog.busy)
+                    : null,
+                onEdit: auth.signedIn
+                    ? (post) => _edit(context, blog.busy, post)
+                    : null,
+                onDelete: auth.signedIn
+                    ? (post) => _confirmDelete(context, post)
+                    : null,
+                onOpen: (post) => context.go('/posts/${post.id}'),
+                currentPage: blog.currentPage,
+                totalPages: blog.totalPages,
+                onPageChanged: (page) =>
+                    context.read<BlogNotifier>().loadPosts(page: page),
+                onRetry: () => context.read<BlogNotifier>().loadPosts(page: 1),
+              ),
+            ),
+          ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
 
   Future<void> _confirmDelete(BuildContext context, BlogPost post) async {
     final confirmed = await showDialog<bool>(
@@ -109,59 +146,41 @@ class BlogPageScreen extends StatelessWidget {
     );
 
     if (confirmed != true || !context.mounted) return;
-
-    StoreProvider.of<AppState>(context).dispatch(DeletePostRequested(post.id));
+    await context.read<BlogNotifier>().deletePost(post.id);
   }
 
-  Future<void> _edit(
-    BuildContext context,
-    BlogPageViewModel bvm, [
-    BlogPost? post,
-  ]) => showDialog<void>(
-    context: context,
-    builder: (_) => PostEditor(
-      title: post?.title,
-      excerpt: post?.excerpt,
-      content: post?.content,
-      postId: post?.id,
-      existingImages: post?.images ?? const [],
-      isSaving: bvm.isBusy,
-      onSubmit: (title, excerpt, content, images) async {
-        final store = StoreProvider.of<AppState>(context);
-        if (post == null) {
-          store.dispatch(CreatePostRequested(title, excerpt, content, images));
-        } else {
-          store.dispatch(
-            UpdatePostRequested(post.id, title, excerpt, content, images),
-          );
-        }
-        return null;
-      },
-      onDeleteImage: post == null
-          ? null
-          : (image) {
-              StoreProvider.of<AppState>(
-                context,
-              ).dispatch(DeletePostImageRequested(post.id, image));
-            },
-    ),
-  );
-}
-
-BlogPageViewModel _bvmFromStore(Store<AppState> store) {
-  final blog = store.state.blog;
-  final session = store.state.auth.session;
-  return BlogPageViewModel(
-    posts: blog.posts,
-    isSignedIn: session != null,
-    currentUserId: session?.user.id,
-    displayName: _displayName(session),
-    postsLoading: blog.postsLoading,
-    isBusy: blog.isBusy,
-    postsError: blog.postsError,
-    currentPage: blog.currentPage,
-    totalPages: blog.totalPages,
-  );
+  Future<void> _edit(BuildContext context, bool isBusy, [BlogPost? post]) =>
+      showDialog<void>(
+        context: context,
+        builder: (_) => PostEditor(
+          title: post?.title,
+          excerpt: post?.excerpt,
+          content: post?.content,
+          postId: post?.id,
+          existingImages: post?.images ?? const [],
+          isSaving: isBusy,
+          onSubmit: (title, excerpt, content, images) async {
+            final notifier = context.read<BlogNotifier>();
+            if (post == null) {
+              await notifier.createPost(title, excerpt, content, images);
+            } else {
+              await notifier.updatePost(
+                post.id,
+                title,
+                excerpt,
+                content,
+                images,
+              );
+            }
+            return null;
+          },
+          onDeleteImage: post == null
+              ? null
+              : (image) {
+                  context.read<BlogNotifier>().deletePostImage(post.id, image);
+                },
+        ),
+      );
 }
 
 String _displayName(Session? session) {

@@ -4,9 +4,7 @@ import 'package:biog_forum_application/features/blog_page/models/blog_models.dar
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-
 typedef PostPage = ({List<BlogPost> posts, int currentPage, int totalPages});
-
 
 class BlogRepository {
   BlogRepository(this.client);

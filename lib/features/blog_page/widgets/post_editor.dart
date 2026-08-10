@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/blog_models.dart';
@@ -114,7 +115,7 @@ class _PostEditorState extends State<PostEditor> {
       return;
     }
     if (!mounted) return;
-    Navigator.pop(context);
+    context.pop();
   }
 
   List<Widget> get _existingImagesSection {
@@ -231,9 +232,7 @@ class _PostEditorState extends State<PostEditor> {
     ),
     actions: [
       TextButton(
-        onPressed: widget.isSaving || _saving
-            ? null
-            : () => Navigator.pop(context),
+        onPressed: widget.isSaving || _saving ? null : () => context.pop(),
         child: const Text('Cancel'),
       ),
       FilledButton(

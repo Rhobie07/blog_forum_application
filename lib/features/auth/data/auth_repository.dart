@@ -1,60 +1,24 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-abstract class AuthOperations {
+class AuthRepository {
+  const AuthRepository(this._client);
+
+  final SupabaseClient _client;
+
+  Session? get currentSession => _client.auth.currentSession;
+
+  Stream<Session?> get sessionChanges =>
+      _client.auth.onAuthStateChange.map((event) => event.session);
+
   Future<AuthResponse> signUp({
     required String email,
     required String password,
-  });
+  }) => _client.auth.signUp(email: email, password: password);
 
   Future<AuthResponse> signIn({
     required String email,
     required String password,
-  });
+  }) => _client.auth.signInWithPassword(email: email, password: password);
 
-  Future<void> signOut();
-}
-
-class AuthRepository implements AuthOperations {
-  final AuthOperations operations;
-
-  AuthRepository(SupabaseClient client)
-    : operations = _SupabaseAuthOperations(client);
-
-  const AuthRepository.forTesting(this.operations);
-
-  @override
-  Future<AuthResponse> signUp({
-    required String email,
-    required String password,
-  }) => operations.signUp(email: email, password: password);
-
-  @override
-  Future<AuthResponse> signIn({
-    required String email,
-    required String password,
-  }) => operations.signIn(email: email, password: password);
-
-  @override
-  Future<void> signOut() => operations.signOut();
-}
-
-class _SupabaseAuthOperations implements AuthOperations {
-  const _SupabaseAuthOperations(this.client);
-
-  final SupabaseClient client;
-
-  @override
-  Future<AuthResponse> signUp({
-    required String email,
-    required String password,
-  }) => client.auth.signUp(email: email, password: password);
-
-  @override
-  Future<AuthResponse> signIn({
-    required String email,
-    required String password,
-  }) => client.auth.signInWithPassword(email: email, password: password);
-
-  @override
-  Future<void> signOut() => client.auth.signOut();
+  Future<void> signOut() => _client.auth.signOut();
 }

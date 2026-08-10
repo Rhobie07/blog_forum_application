@@ -1,19 +1,13 @@
-import 'dart:async';
 import 'package:biog_forum_application/config/env/env.dart';
 import 'package:biog_forum_application/config/theme/theme.dart';
-import 'package:biog_forum_application/core/redux/app_state.dart';
 import 'package:biog_forum_application/core/router/router.dart';
 import 'package:biog_forum_application/features/auth/data/auth_repository.dart';
-import 'package:biog_forum_application/features/auth/redux/auth_actions.dart';
-import 'package:biog_forum_application/features/auth/redux/auth_middleware.dart';
-import 'package:biog_forum_application/features/auth/redux/auth_reducer.dart';
+import 'package:biog_forum_application/features/auth/state/auth_notifier.dart';
 import 'package:biog_forum_application/features/blog_page/data/blog_repository.dart';
-import 'package:biog_forum_application/features/blog_page/redux/blog_middleware.dart';
-import 'package:biog_forum_application/features/blog_page/redux/blog_reducer.dart';
+import 'package:biog_forum_application/features/blog_page/state/blog_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_redux/flutter_redux.dart';
-import 'package:redux/redux.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -26,64 +20,56 @@ Future<void> main() async {
     throw StateError('Missing Supabase configuration.');
   }
 
+  final client = Supabase.instance.client;
+
   await Supabase.initialize(url: url, publishableKey: key);
 
-  final client = Supabase.instance.client;
-  final store = Store<AppState>(
-    _appReducer,
-    initialState: AppState.initial(),
-    middleware: [
-      createAuthMiddleware(AuthRepository(client)),
-      createBlogMiddleware(BlogRepository(client)),
-    ],
-  );
-  final router = AppRouter(store);
-
-  runApp(_BlogForumApp(store: store, router: router));
+  runApp(_BlogForumApp(client: client));
 }
 
-AppState _appReducer(AppState state, dynamic action) => AppState(
-  auth: authReducer(state.auth, action),
-  blog: blogReducer(state.blog, action),
-);
-
 class _BlogForumApp extends StatefulWidget {
-  const _BlogForumApp({required this.store, required this.router});
-  final Store<AppState> store;
-  final AppRouter router;
+  const _BlogForumApp({required this.client});
+
+  final SupabaseClient client;
 
   @override
   State<_BlogForumApp> createState() => _BlogForumAppState();
 }
 
 class _BlogForumAppState extends State<_BlogForumApp> {
-  StreamSubscription<AuthState>? _authSub;
+  late final AuthNotifier _authNotifier;
+  late final AppRouter _router;
+
+  AuthRepository get authRepository => AuthRepository(widget.client);
+  BlogRepository get blogRepository => BlogRepository(widget.client);
 
   @override
   void initState() {
     super.initState();
-    final auth = Supabase.instance.client.auth;
-    widget.store.dispatch(AuthSessionChanged(auth.currentSession));
-    _authSub = auth.onAuthStateChange.listen(
-      (event) => widget.store.dispatch(AuthSessionChanged(event.session)),
-    );
+    _authNotifier = AuthNotifier(authRepository)..start();
+    _router = AppRouter(_authNotifier);
   }
 
   @override
   void dispose() {
-    _authSub?.cancel();
-    widget.router.dispose();
+    _router.dispose();
+    _authNotifier.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => StoreProvider<AppState>(
-    store: widget.store,
+  Widget build(BuildContext context) => MultiProvider(
+    providers: [
+      ChangeNotifierProvider<AuthNotifier>.value(value: _authNotifier),
+      ChangeNotifierProvider<BlogNotifier>(
+        create: (_) => BlogNotifier(blogRepository),
+      ),
+    ],
     child: MaterialApp.router(
       title: 'Blog Forum',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: widget.router.router,
+      routerConfig: _router.router,
     ),
   );
 }

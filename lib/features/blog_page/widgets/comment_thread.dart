@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/blog_models.dart';
@@ -221,7 +222,7 @@ class _CommentThreadState extends State<CommentThread> {
 
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
+            onPressed: () => context.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           FilledButton(
