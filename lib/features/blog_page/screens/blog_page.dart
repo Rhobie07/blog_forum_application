@@ -89,7 +89,7 @@ class _BlogPageScreenState extends State<BlogPageScreen> {
                       isSignedIn: auth.signedIn,
                       displayName: auth.displayName,
                       onLogin: () => context.go('/login'),
-                      onLogout: () => context.read<AuthNotifier>().signOut(),
+                      onLogout: () => _confirmLogout(context),
                     ),
                   ],
                 ),
@@ -181,6 +181,29 @@ class _BlogPageScreenState extends State<BlogPageScreen> {
                 },
         ),
       );
+}
+
+Future<void> _confirmLogout(BuildContext context) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Confirm Logout?'),
+      content: const Text('This action cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('Logout'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true || !context.mounted) return;
+  await context.read<AuthNotifier>().signOut();
 }
 
 String _displayName(Session? session) {
