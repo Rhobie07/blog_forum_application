@@ -184,10 +184,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     Expanded(
                                       child: Text(
                                         auth.error!,
-                                        style: TextStyle(
-                                          color: theme.colorScheme.error,
-                                          fontSize: 13,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme.colorScheme.error,
+                                            ),
                                       ),
                                     ),
                                   ],

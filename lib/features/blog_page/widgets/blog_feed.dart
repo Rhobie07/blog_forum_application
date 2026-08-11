@@ -96,7 +96,9 @@ class _BlogFeedState extends State<BlogFeed> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Text(
               widget.error!,
-              style: TextStyle(color: theme.colorScheme.error),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
           ),
 

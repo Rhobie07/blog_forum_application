@@ -188,7 +188,9 @@ class _PageNumber extends StatelessWidget {
         width: 32,
         height: 32,
         child: Material(
-          color: selected ? theme.colorScheme.primary : Colors.transparent,
+          color: selected
+              ? theme.colorScheme.primary
+              : theme.colorScheme.primary.withAlpha(0),
           borderRadius: BorderRadius.circular(6),
           child: InkWell(
             onTap: selected ? null : onTap,

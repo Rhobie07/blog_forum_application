@@ -10,6 +10,8 @@ class AppTheme {
   static const _mutedGray = Color(0xFF71717A);
   static const _borderGray = Color(0xFFE4E4E7);
   static const _bgWhite = Color(0xFFFAFAFA);
+  static const _pureWhite = Color(0xFFFFFFFF);
+  static const _mediaOverlay = Color(0x8A000000);
   static const _accent = Color(0xFFE11D48);
 
   static ThemeData get light => ThemeData(
@@ -17,12 +19,15 @@ class AppTheme {
     brightness: Brightness.light,
     colorScheme: const ColorScheme.light(
       primary: _inkBlack,
-      onPrimary: Colors.white,
+      onPrimary: _pureWhite,
       secondary: _subtleGray,
       surface: _bgWhite,
       onSurface: _textBlack,
       outline: _borderGray,
       error: _accent,
+      inverseSurface: _inkBlack,
+      onInverseSurface: _pureWhite,
+      scrim: _mediaOverlay,
     ),
     scaffoldBackgroundColor: _bgWhite,
     textTheme: GoogleFonts.interTextTheme().copyWith(
@@ -105,7 +110,7 @@ class AppTheme {
       ),
     ),
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: _pureWhite,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -116,7 +121,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: _pureWhite,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -148,7 +153,7 @@ class AppTheme {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: _inkBlack,
-        foregroundColor: Colors.white,
+        foregroundColor: _pureWhite,
         disabledBackgroundColor: _borderGray,
         disabledForegroundColor: _mutedGray,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -187,7 +192,7 @@ class AppTheme {
       contentTextStyle: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: Colors.white,
+        color: _pureWhite,
       ),
     ),
   );

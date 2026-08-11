@@ -83,8 +83,12 @@ class MediaGallery extends StatelessWidget {
                               : null,
                           icon: const Icon(Icons.close),
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                            foregroundColor: Colors.white,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.scrim,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onInverseSurface,
                           ),
                         ),
                       ),
