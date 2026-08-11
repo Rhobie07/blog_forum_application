@@ -136,109 +136,124 @@ class _PostEditorState extends State<PostEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    scrollable: true,
-    title: Text(widget.postId != null ? 'Edit post' : 'New post'),
-    content: SizedBox(
-      width: double.maxFinite,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _title,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Title'),
-            ),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      scrollable: true,
+      title: Text(widget.postId != null ? 'Edit post' : 'New post'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _title,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
 
-            SizedBox(height: 8),
+              SizedBox(height: 8),
 
-            TextField(
-              controller: _excerpt,
-              decoration: const InputDecoration(labelText: 'Excerpt'),
-            ),
+              TextField(
+                controller: _excerpt,
+                decoration: const InputDecoration(labelText: 'Excerpt'),
+              ),
 
-            SizedBox(height: 8),
+              SizedBox(height: 8),
 
-            TextField(
-              controller: _content,
-              minLines: 3,
-              maxLines: 6,
-              decoration: const InputDecoration(labelText: 'Content'),
-            ),
-            ..._existingImagesSection,
-            if (_pendingFiles.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 104,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _pendingFiles.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) => Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: AspectRatio(
-                          aspectRatio: 1.35,
-                          child: Image.network(
-                            _pendingFiles[index].path,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => ColoredBox(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              child: const Icon(
-                                Icons.image_not_supported_outlined,
+              TextField(
+                controller: _content,
+                minLines: 3,
+                maxLines: 6,
+                decoration: const InputDecoration(labelText: 'Content'),
+              ),
+              ..._existingImagesSection,
+              if (_pendingFiles.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 104,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _pendingFiles.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (context, index) => Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: AspectRatio(
+                            aspectRatio: 1.35,
+                            child: Image.network(
+                              _pendingFiles[index].path,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => ColoredBox(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                child: const Icon(
+                                  Icons.image_not_supported_outlined,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: IconButton(
-                          onPressed: () => _removePending(index),
-                          icon: const Icon(Icons.close),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                            foregroundColor: Colors.white,
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: IconButton(
+                            onPressed: () => _removePending(index),
+                            icon: const Icon(Icons.close),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.scrim,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.onInverseSurface,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
+              ],
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _saving ? null : _pickImages,
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: const Text('Add images'),
+                    ),
+                  ],
+                ),
               ),
-            ],
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _saving ? null : _pickImages,
-                    icon: const Icon(Icons.add_photo_alternate_outlined),
-                    label: const Text('Add images'),
+              if (_error != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _error!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
-                ],
-              ),
-            ),
-            if (_error != null)
-              Align(alignment: Alignment.centerLeft, child: Text(_error!)),
-          ],
+                ),
+            ],
+          ),
         ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: widget.isSaving || _saving ? null : () => context.pop(),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        onPressed: widget.isSaving || _saving ? null : _submit,
-        child: Text(widget.isSaving || _saving ? 'Saving\u2026' : 'Save'),
-      ),
-    ],
-  );
+      actions: [
+        TextButton(
+          onPressed: widget.isSaving || _saving ? null : () => context.pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: widget.isSaving || _saving ? null : _submit,
+          child: Text(widget.isSaving || _saving ? 'Saving\u2026' : 'Save'),
+        ),
+      ],
+    );
+  }
 }

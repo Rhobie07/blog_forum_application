@@ -237,13 +237,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             }
                           : null,
                       onUploadImage: auth.signedIn
-                          ? (commentId, file, position) {
-                              context.read<BlogNotifier>().uploadCommentImage(
-                                commentId,
-                                file,
-                                position,
-                              );
-                            }
+                          ? (commentId, file, position) => context
+                                .read<BlogNotifier>()
+                                .uploadCommentImage(commentId, file, position)
                           : null,
                       onDeleteImage: auth.signedIn
                           ? (commentId, image) {
