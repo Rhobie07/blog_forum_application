@@ -29,7 +29,8 @@ class CommentThread extends StatefulWidget {
   final Future<String?> Function(int postId, String? body)? onCreate;
   final Future<String?> Function(int id, String body)? onUpdate;
   final Future<String?> Function(int id)? onDelete;
-  final void Function(int commentId, XFile file, int position)? onUploadImage;
+  final Future<void> Function(int commentId, XFile file, int position)?
+  onUploadImage;
   final void Function(int commentId, ContentImage image)? onDeleteImage;
   final bool commentsLoading;
   final VoidCallback? onRetryComments;
@@ -59,11 +60,16 @@ class _CommentThreadState extends State<CommentThread> {
       for (final comment in widget.comments) {
         if (!existingIds.contains(comment.id) &&
             comment.postId == _pendingCreatePostId) {
-          for (var i = 0; i < _pendingImages.length; i++) {
-            widget.onUploadImage!(comment.id, _pendingImages[i], i);
-          }
+          final uploadImage = widget.onUploadImage!;
+          final pendingImages = List<XFile>.of(_pendingImages);
           _pendingImages.clear();
           _pendingCreatePostId = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted) return;
+            for (var i = 0; i < pendingImages.length; i++) {
+              await uploadImage(comment.id, pendingImages[i], i);
+            }
+          });
           break;
         }
       }
@@ -99,152 +105,223 @@ class _CommentThreadState extends State<CommentThread> {
     if (files.isNotEmpty) setState(() => _pendingImages.addAll(files));
   }
 
-  Future<void> _editComment(BlogComment comment) async {
-    if (widget.onUpdate == null || widget.isBusy) return;
-    final controller = TextEditingController(text: comment.body ?? '');
-    final pendingEditImages = <XFile>[];
-    final removedEditImageIds = <int>{};
-    final result = await showDialog<String>(
+  Future<void> _confirmDelete(BuildContext context, BlogComment comment) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit comment'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                key: const Key('comment_edit_field'),
-                controller: controller,
-                minLines: 2,
-                maxLines: 5,
-              ),
-
-              if (comment.images
-                  .where((img) => !removedEditImageIds.contains(img.id))
-                  .isNotEmpty) ...[
-                const SizedBox(height: 12),
-                MediaGallery(
-                  images: comment.images
-                      .where((img) => !removedEditImageIds.contains(img.id))
-                      .toList(),
-                  compact: true,
-                  parentCommentId: comment.id,
-                  parentLabel: 'comment ${comment.id}',
-                  onRemove: widget.onDeleteImage == null
-                      ? null
-                      : (image) {
-                          removedEditImageIds.add(image.id);
-                          widget.onDeleteImage!(comment.id, image);
-                          (dialogContext as Element).markNeedsBuild();
-                        },
-                ),
-              ],
-
-              if (pendingEditImages.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 104,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < pendingEditImages.length; i++)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              right: i < pendingEditImages.length - 1 ? 10 : 0,
-                            ),
-                            child: Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: AspectRatio(
-                                    aspectRatio: 1.35,
-                                    child: Image.network(
-                                      pendingEditImages[i].path,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => ColoredBox(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surfaceContainerHighest,
-                                        child: const Icon(
-                                          Icons.image_not_supported_outlined,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: IconButton(
-                                    onPressed: () {
-                                      pendingEditImages.removeAt(i);
-                                      (dialogContext as Element)
-                                          .markNeedsBuild();
-                                    },
-                                    icon: const Icon(Icons.close),
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: Colors.black54,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final files = await _picker.pickMultiImage();
-                        if (files.isNotEmpty) {
-                          pendingEditImages.addAll(files);
-                          (dialogContext as Element).markNeedsBuild();
-                        }
-                      },
-                      icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: const Text('Add images'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
+        title: const Text('Delete Comment?'),
+        content: const Text('This action cannot be undone.'),
         actions: [
           TextButton(
-            onPressed: () => context.pop(dialogContext),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
-            child: const Text('Save comment'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
           ),
         ],
       ),
     );
 
-    if (result == null || result.trim().isEmpty || !mounted) return;
+    if (confirmed != true || !context.mounted) return;
+    await widget.onDelete?.call(comment.id);
+  }
+
+  Future<void> _editComment(BlogComment comment) async {
+    if (widget.onUpdate == null || widget.isBusy) return;
+    final controller = TextEditingController(text: comment.body ?? '');
+    final pendingEditImages = <XFile>[];
+    final removedEditImageIds = <int>{};
+    String? editError;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit comment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  key: const Key('comment_edit_field'),
+                  controller: controller,
+                  minLines: 2,
+                  maxLines: 5,
+                ),
+
+                if (editError != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      editError!,
+                      key: const Key('comment_edit_error'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+
+                if (comment.images
+                    .where((img) => !removedEditImageIds.contains(img.id))
+                    .isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  MediaGallery(
+                    images: comment.images
+                        .where((img) => !removedEditImageIds.contains(img.id))
+                        .toList(),
+                    compact: true,
+                    parentCommentId: comment.id,
+                    parentLabel: 'comment ${comment.id}',
+                    onRemove: widget.onDeleteImage == null
+                        ? null
+                        : (image) => setDialogState(() {
+                            removedEditImageIds.add(image.id);
+                            editError = null;
+                          }),
+                  ),
+                ],
+
+                if (pendingEditImages.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 104,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < pendingEditImages.length; i++)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                right: i < pendingEditImages.length - 1
+                                    ? 10
+                                    : 0,
+                              ),
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: AspectRatio(
+                                      aspectRatio: 1.35,
+                                      child: Image.network(
+                                        pendingEditImages[i].path,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => ColoredBox(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                          child: const Icon(
+                                            Icons.image_not_supported_outlined,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: IconButton(
+                                      onPressed: () {
+                                        pendingEditImages.removeAt(i);
+                                        (dialogContext as Element)
+                                            .markNeedsBuild();
+                                      },
+                                      icon: const Icon(Icons.close),
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.scrim,
+                                        foregroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.onInverseSurface,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final files = await _picker.pickMultiImage();
+                          if (files.isNotEmpty) {
+                            setDialogState(() {
+                              pendingEditImages.addAll(files);
+                              editError = null;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.add_photo_alternate_outlined),
+                        label: const Text('Add images'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () => context.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final hasExistingImage = comment.images.any(
+                  (image) => !removedEditImageIds.contains(image.id),
+                );
+                if (controller.text.trim().isEmpty &&
+                    !hasExistingImage &&
+                    pendingEditImages.isEmpty) {
+                  setDialogState(
+                    () => editError =
+                        'A comment must include text or at least one image.',
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, controller.text.trim());
+              },
+              child: const Text('Save comment'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+
+    if (result == null || !mounted) return;
     final error = await widget.onUpdate!(comment.id, result);
     if (mounted) setState(() => _composerError = error);
-    if (error == null &&
-        pendingEditImages.isNotEmpty &&
-        widget.onUploadImage != null) {
-      for (var i = 0; i < pendingEditImages.length; i++) {
-        widget.onUploadImage!(
-          comment.id,
-          pendingEditImages[i],
-          comment.images.length + i,
-        );
+    if (error == null) {
+      if (widget.onDeleteImage != null) {
+        for (final image in comment.images.where(
+          (image) => removedEditImageIds.contains(image.id),
+        )) {
+          widget.onDeleteImage!(comment.id, image);
+        }
+      }
+      if (widget.onUploadImage != null) {
+        final remainingImageCount =
+            comment.images.length - removedEditImageIds.length;
+        for (var i = 0; i < pendingEditImages.length; i++) {
+          widget.onUploadImage!(
+            comment.id,
+            pendingEditImages[i],
+            remainingImageCount + i,
+          );
+        }
       }
     }
   }
@@ -291,7 +368,9 @@ class _CommentThreadState extends State<CommentThread> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   widget.error!,
-                  style: TextStyle(color: theme.colorScheme.error),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
               if (widget.onRetryComments != null)
@@ -310,7 +389,9 @@ class _CommentThreadState extends State<CommentThread> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               _composerError!,
-              style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
           ),
 
@@ -427,7 +508,7 @@ class _CommentThreadState extends State<CommentThread> {
                         IconButton(
                           onPressed: widget.isBusy
                               ? null
-                              : () => widget.onDelete?.call(comment.id),
+                              : () => _confirmDelete(context, comment),
                           tooltip: 'Delete comment',
                           icon: const Icon(Icons.delete_outline, size: 18),
                           visualDensity: VisualDensity.compact,
@@ -520,15 +601,15 @@ class _CommentThreadState extends State<CommentThread> {
                         onTap: () =>
                             setState(() => _pendingImages.removeAt(index)),
                         child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.scrim,
                             shape: BoxShape.circle,
                           ),
                           padding: const EdgeInsets.all(2),
-                          child: const Icon(
+                          child: Icon(
                             Icons.close,
                             size: 16,
-                            color: Colors.white,
+                            color: theme.colorScheme.onInverseSurface,
                           ),
                         ),
                       ),
