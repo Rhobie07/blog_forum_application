@@ -173,8 +173,6 @@ class _CommentThreadState extends State<CommentThread> {
                         .where((img) => !removedEditImageIds.contains(img.id))
                         .toList(),
                     compact: true,
-                    parentCommentId: comment.id,
-                    parentLabel: 'comment ${comment.id}',
                     onRemove: widget.onDeleteImage == null
                         ? null
                         : (image) => setDialogState(() {
@@ -482,12 +480,7 @@ class _CommentThreadState extends State<CommentThread> {
 
                         if (comment.images.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          MediaGallery(
-                            images: comment.images,
-                            compact: true,
-                            parentCommentId: comment.id,
-                            parentLabel: 'comment ${comment.id}',
-                          ),
+                          MediaGallery(images: comment.images, compact: true),
                         ],
                       ],
                     ),

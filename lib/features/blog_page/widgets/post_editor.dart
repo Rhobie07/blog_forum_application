@@ -128,8 +128,6 @@ class _PostEditorState extends State<PostEditor> {
       MediaGallery(
         images: visible,
         compact: true,
-        parentPostId: widget.postId,
-        parentLabel: 'existing',
         onRemove: _removeExistingImage,
       ),
     ];

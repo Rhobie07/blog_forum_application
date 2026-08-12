@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import '../models/blog_models.dart';
 import 'blog_post_list.dart';
 
-class BlogFeed extends StatefulWidget {
+class BlogFeed extends StatelessWidget {
   const BlogFeed({
     super.key,
     this.posts = const [],
-    this.isSignedIn = false,
     this.currentUserId,
     this.isBusy = false,
     this.loading = false,
     this.error,
-    this.searchQuery = '',
     this.onCreate,
     this.onEdit,
     this.onDelete,
@@ -23,12 +21,10 @@ class BlogFeed extends StatefulWidget {
   });
 
   final List<BlogPost> posts;
-  final bool isSignedIn;
   final String? currentUserId;
   final bool isBusy;
   final bool loading;
   final String? error;
-  final String searchQuery;
   final VoidCallback? onCreate;
   final ValueChanged<BlogPost>? onEdit;
   final ValueChanged<BlogPost>? onDelete;
@@ -37,29 +33,6 @@ class BlogFeed extends StatefulWidget {
   final int totalPages;
   final ValueChanged<int>? onPageChanged;
   final VoidCallback? onRetry;
-
-  @override
-  State<BlogFeed> createState() => _BlogFeedState();
-}
-
-class _BlogFeedState extends State<BlogFeed> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.searchQuery,
-  );
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant BlogFeed oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != _controller.text) {
-      _controller.text = widget.searchQuery;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,10 +48,10 @@ class _BlogFeedState extends State<BlogFeed> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (widget.onCreate != null) ...[
+                  if (onCreate != null) ...[
                     const SizedBox(width: 10),
                     FilledButton.icon(
-                      onPressed: widget.isBusy ? null : widget.onCreate,
+                      onPressed: isBusy ? null : onCreate,
                       icon: const Icon(Icons.add, size: 18),
                       label: Text(narrow ? '' : 'New post'),
                     ),
@@ -91,24 +64,24 @@ class _BlogFeedState extends State<BlogFeed> {
 
         Expanded(child: _buildBody(theme)),
 
-        if (widget.error != null && widget.posts.isNotEmpty)
+        if (error != null && posts.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Text(
-              widget.error!,
+              error!,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.error,
               ),
             ),
           ),
 
-        if (widget.isBusy) const LinearProgressIndicator(),
+        if (isBusy) const LinearProgressIndicator(),
       ],
     );
   }
 
   Widget _buildBody(ThemeData theme) {
-    if (widget.loading && widget.posts.isEmpty) {
+    if (loading && posts.isEmpty) {
       return const Center(
         child: SizedBox(
           width: 24,
@@ -118,7 +91,7 @@ class _BlogFeedState extends State<BlogFeed> {
       );
     }
 
-    if (widget.error != null && widget.posts.isEmpty) {
+    if (error != null && posts.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -132,14 +105,14 @@ class _BlogFeedState extends State<BlogFeed> {
               ),
               const SizedBox(height: 12),
               Text(
-                widget.error!,
+                error!,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium,
               ),
-              if (widget.onRetry != null) ...[
+              if (onRetry != null) ...[
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: widget.onRetry,
+                  onPressed: onRetry,
                   child: const Text('Try again'),
                 ),
               ],
@@ -149,7 +122,7 @@ class _BlogFeedState extends State<BlogFeed> {
       );
     }
 
-    if (widget.posts.isEmpty && widget.totalPages == 0) {
+    if (posts.isEmpty && totalPages == 0) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -162,16 +135,11 @@ class _BlogFeedState extends State<BlogFeed> {
                 color: theme.colorScheme.secondary.withAlpha(80),
               ),
               const SizedBox(height: 12),
-              Text(
-                widget.searchQuery.isNotEmpty
-                    ? 'No posts match your search'
-                    : 'No posts yet',
-                style: theme.textTheme.bodyMedium,
-              ),
-              if (widget.onCreate != null && widget.searchQuery.isEmpty) ...[
+              Text('No posts yet', style: theme.textTheme.bodyMedium),
+              if (onCreate != null) ...[
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: widget.onCreate,
+                  onPressed: onCreate,
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Create the first post'),
                 ),
@@ -183,14 +151,14 @@ class _BlogFeedState extends State<BlogFeed> {
     }
 
     return BlogPostList(
-      posts: widget.posts,
-      currentUserId: widget.currentUserId,
-      onTap: widget.onOpen,
-      onEdit: widget.onEdit,
-      onDelete: widget.onDelete,
-      currentPage: widget.currentPage,
-      totalPages: widget.totalPages,
-      onPageChanged: widget.onPageChanged,
+      posts: posts,
+      currentUserId: currentUserId,
+      onTap: onOpen,
+      onEdit: onEdit,
+      onDelete: onDelete,
+      currentPage: currentPage,
+      totalPages: totalPages,
+      onPageChanged: onPageChanged,
     );
   }
 }

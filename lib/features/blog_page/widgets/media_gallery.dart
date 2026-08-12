@@ -17,21 +17,13 @@ class MediaGallery extends StatelessWidget {
     super.key,
     required this.images,
     this.compact = false,
-    this.parentPostId,
-    this.parentCommentId,
-    this.parentLabel,
     this.onRemove,
-    this.removeEnabled = true,
     this.imageFit = BoxFit.cover,
   });
 
   final List<ContentImage> images;
   final bool compact;
-  final int? parentPostId;
-  final int? parentCommentId;
-  final String? parentLabel;
   final ValueChanged<ContentImage>? onRemove;
-  final bool removeEnabled;
   final BoxFit imageFit;
 
   @override
@@ -75,12 +67,8 @@ class MediaGallery extends StatelessWidget {
                         top: 4,
                         right: 4,
                         child: IconButton(
-                          tooltip: removeEnabled
-                              ? 'Remove image for this comment'
-                              : 'Removing image for this comment',
-                          onPressed: removeEnabled
-                              ? () => onRemove!(ordered[i])
-                              : null,
+                          tooltip: 'Remove image',
+                          onPressed: () => onRemove!(ordered[i]),
                           icon: const Icon(Icons.close),
                           style: IconButton.styleFrom(
                             backgroundColor: Theme.of(

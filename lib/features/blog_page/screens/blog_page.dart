@@ -98,7 +98,6 @@ class _BlogPageScreenState extends State<BlogPageScreen> {
             Expanded(
               child: BlogFeed(
                 posts: blog.posts,
-                isSignedIn: auth.signedIn,
                 currentUserId: auth.userId,
                 loading: blog.loading,
                 isBusy: blog.busy,
