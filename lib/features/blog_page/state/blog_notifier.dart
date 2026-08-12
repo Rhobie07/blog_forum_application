@@ -89,7 +89,9 @@ class BlogNotifier extends ChangeNotifier {
 
     _setState(
       _state.copyWith(
-        comments: postId == _detailId(_state) ? _state.comments : const [],
+        comments: postId == _state.selectedPost?.id
+            ? _state.comments
+            : const [],
         commentsLoading: true,
         clearCommentsError: true,
       ),
@@ -485,8 +487,6 @@ class BlogNotifier extends ChangeNotifier {
   }
 }
 
-int? _detailId(BlogState state) => state.selectedPost?.id;
-
 List<BlogPost> _replacePost(List<BlogPost> posts, BlogPost post) => posts
     .map(
       (existing) =>
@@ -519,10 +519,6 @@ BlogComment _copyCommentWithImages(
 );
 
 List<ContentImage> _sortedImages(List<ContentImage> images) {
-  images.sort(
-    (a, b) => a.position == b.position
-        ? a.id.compareTo(b.id)
-        : a.position.compareTo(b.position),
-  );
+  images.sort(compareImages);
   return images;
 }

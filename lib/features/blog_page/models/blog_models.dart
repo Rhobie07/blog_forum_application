@@ -249,6 +249,11 @@ class BlogComment {
 
 typedef Json = Map<String, dynamic>;
 
+int compareImages(ContentImage a, ContentImage b) {
+  final position = a.position.compareTo(b.position);
+  return position == 0 ? a.id.compareTo(b.id) : position;
+}
+
 List<ContentImage> _readImages(Object? value) {
   if (value == null) return const <ContentImage>[];
   if (value is! List) {
@@ -262,11 +267,7 @@ List<ContentImage> _readImages(Object? value) {
     }
     rows.add(item);
   }
-  final images = rows.map(ContentImage.fromJson).toList()
-    ..sort((a, b) {
-      final position = a.position.compareTo(b.position);
-      return position == 0 ? a.id.compareTo(b.id) : position;
-    });
+  final images = rows.map(ContentImage.fromJson).toList()..sort(compareImages);
   return List.unmodifiable(images);
 }
 
