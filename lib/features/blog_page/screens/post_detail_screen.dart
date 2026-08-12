@@ -1,3 +1,4 @@
+import 'package:biog_forum_application/core/utils/time_ago.dart';
 import 'package:biog_forum_application/features/auth/state/auth_notifier.dart';
 import 'package:biog_forum_application/features/blog_page/models/blog_models.dart';
 import 'package:biog_forum_application/features/blog_page/state/blog_notifier.dart';
@@ -42,16 +43,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       notifier.loadPost(widget.postId);
       notifier.loadComments(widget.postId);
     });
-  }
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 365) return '${(diff.inDays / 365).floor}y';
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor}mo';
-    if (diff.inDays > 0) return '${diff.inDays}d';
-    if (diff.inHours > 0) return '${diff.inHours}h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m';
-    return 'now';
   }
 
   @override
@@ -174,7 +165,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                 ),
                               ),
                               Text(
-                                '${_timeAgo(post.createdAt)} ago',
+                                '${timeAgo(post.createdAt)} ago',
                                 style: theme.textTheme.bodySmall,
                               ),
                             ],
@@ -189,8 +180,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         child: MediaGallery(
                           images: post.images,
                           imageFit: BoxFit.contain,
-                          parentPostId: post.id,
-                          parentLabel: post.title,
                         ),
                       ),
                     ],

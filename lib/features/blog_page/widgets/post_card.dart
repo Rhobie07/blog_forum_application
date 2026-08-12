@@ -1,3 +1,4 @@
+import 'package:biog_forum_application/core/utils/time_ago.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/blog_models.dart';
@@ -18,16 +19,6 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 365) return '${(diff.inDays / 365).floor}y';
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor}mo';
-    if (diff.inDays > 0) return '${diff.inDays}d';
-    if (diff.inHours > 0) return '${diff.inHours}h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m';
-    return 'now';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +68,7 @@ class PostCard extends StatelessWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
-                              _timeAgo(post.createdAt),
+                              timeAgo(post.createdAt),
                               style: theme.textTheme.bodySmall,
                             ),
                             if (imageCount > 0) ...[
@@ -144,11 +135,7 @@ class PostCard extends StatelessWidget {
                 const SizedBox(height: 14),
                 SizedBox(
                   height: 180,
-                  child: MediaGallery(
-                    images: post.images,
-                    compact: false,
-                    parentLabel: post.title,
-                  ),
+                  child: MediaGallery(images: post.images, compact: false),
                 ),
               ],
             ],
