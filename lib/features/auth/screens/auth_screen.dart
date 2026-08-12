@@ -1,4 +1,5 @@
 import 'package:biog_forum_application/features/auth/state/auth_notifier.dart';
+import 'package:biog_forum_application/features/ui/auth_error_banner.dart';
 import 'package:biog_forum_application/features/ui/header_icon_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -43,8 +44,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _goRegister() {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    context.read<AuthNotifier>().clearFeedback();
     context.go('/register');
   }
 
@@ -146,33 +145,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
 
                             if (auth.error != null) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.error.withAlpha(12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      size: 18,
-                                      color: theme.colorScheme.error,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        auth.error!,
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: theme.colorScheme.error,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              AuthErrorBanner(error: auth.error!),
                             ],
 
                             const SizedBox(height: 24),
