@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/blog_models.dart';
 import 'media_gallery.dart';
+import 'edit_comment_dialog.dart';
 
 class CommentThread extends StatefulWidget {
   const CommentThread({
@@ -130,193 +130,33 @@ class _CommentThreadState extends State<CommentThread> {
 
   Future<void> _editComment(BlogComment comment) async {
     if (widget.onUpdate == null || widget.isBusy) return;
-    final controller = TextEditingController(text: comment.body ?? '');
-    final pendingEditImages = <XFile>[];
-    final removedEditImageIds = <int>{};
-    String? editError;
-    final result = await showDialog<String>(
+    final result = await showDialog<EditDialogResult>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit comment'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  key: const Key('comment_edit_field'),
-                  controller: controller,
-                  minLines: 2,
-                  maxLines: 5,
-                ),
-
-                if (editError != null) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      editError!,
-                      key: const Key('comment_edit_error'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ],
-
-                if (comment.images
-                    .where((img) => !removedEditImageIds.contains(img.id))
-                    .isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  MediaGallery(
-                    images: comment.images
-                        .where((img) => !removedEditImageIds.contains(img.id))
-                        .toList(),
-                    compact: true,
-                    onRemove: widget.onDeleteImage == null
-                        ? null
-                        : (image) => setDialogState(() {
-                            removedEditImageIds.add(image.id);
-                            editError = null;
-                          }),
-                  ),
-                ],
-
-                if (pendingEditImages.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 104,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < pendingEditImages.length; i++)
-                            Padding(
-                              padding: EdgeInsets.only(
-                                right: i < pendingEditImages.length - 1
-                                    ? 10
-                                    : 0,
-                              ),
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: AspectRatio(
-                                      aspectRatio: 1.35,
-                                      child: Image.network(
-                                        pendingEditImages[i].path,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) => ColoredBox(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                          child: const Icon(
-                                            Icons.image_not_supported_outlined,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 4,
-                                    right: 4,
-                                    child: IconButton(
-                                      onPressed: () {
-                                        pendingEditImages.removeAt(i);
-                                        (dialogContext as Element)
-                                            .markNeedsBuild();
-                                      },
-                                      icon: const Icon(Icons.close),
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.scrim,
-                                        foregroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.onInverseSurface,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final files = await _picker.pickMultiImage();
-                          if (files.isNotEmpty) {
-                            setDialogState(() {
-                              pendingEditImages.addAll(files);
-                              editError = null;
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.add_photo_alternate_outlined),
-                        label: const Text('Add images'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: () => context.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final hasExistingImage = comment.images.any(
-                  (image) => !removedEditImageIds.contains(image.id),
-                );
-                if (controller.text.trim().isEmpty &&
-                    !hasExistingImage &&
-                    pendingEditImages.isEmpty) {
-                  setDialogState(
-                    () => editError =
-                        'A comment must include text or at least one image.',
-                  );
-                  return;
-                }
-                Navigator.pop(dialogContext, controller.text.trim());
-              },
-              child: const Text('Save comment'),
-            ),
-          ],
-        ),
+      builder: (_) => EditCommentDialog(
+        comment: comment,
+        picker: _picker,
+        onDeleteImage: widget.onDeleteImage,
       ),
     );
-    controller.dispose();
 
     if (result == null || !mounted) return;
-    final error = await widget.onUpdate!(comment.id, result);
+    final error = await widget.onUpdate!(comment.id, result.text);
     if (mounted) setState(() => _composerError = error);
     if (error == null) {
       if (widget.onDeleteImage != null) {
         for (final image in comment.images.where(
-          (image) => removedEditImageIds.contains(image.id),
+          (image) => result.removedImageIds.contains(image.id),
         )) {
           widget.onDeleteImage!(comment.id, image);
         }
       }
       if (widget.onUploadImage != null) {
         final remainingImageCount =
-            comment.images.length - removedEditImageIds.length;
-        for (var i = 0; i < pendingEditImages.length; i++) {
+            comment.images.length - result.removedImageIds.length;
+        for (var i = 0; i < result.pendingImages.length; i++) {
           widget.onUploadImage!(
             comment.id,
-            pendingEditImages[i],
+            result.pendingImages[i],
             remainingImageCount + i,
           );
         }
