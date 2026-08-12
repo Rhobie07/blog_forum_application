@@ -14,7 +14,6 @@ class AppRouter {
         final signedIn = authNotifier.state.session != null;
         final location = state.matchedLocation;
 
-        if (location == '/') return '/blogPage';
         if (signedIn && (location == '/login' || location == '/register')) {
           return '/blogPage';
         }
